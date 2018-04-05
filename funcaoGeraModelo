@@ -4,21 +4,8 @@ buffer:	.asciiz
 stringModelo:	.asciiz
 
 .text
-li	$v0,13
-la	$a0,file
-li	$a1,0
-li	$a2,0
-syscall
-move 	$t0,$v0
-li	$v0,14
-move	$a0,$t0
-la	$a1,buffer
-li	$a2,8
-syscall
-li	$t1,2
-lb	$t0,buffer($t1)
-li	$a0,5
-li	$a1,'A'
+li	$a0,2
+li	$a1,'R'
 jal	gerarStringModelo
 move	$a0,$v0
 li	$v0,4
