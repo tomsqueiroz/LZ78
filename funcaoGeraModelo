@@ -1,11 +1,11 @@
 .data
-file:	.asciiz "teste.txt"	#nome arquivo
-buffer:	.asciiz
+stringTeste:	.asciiz	"Ronaldo"
+numeroTeste:	.ascii	"2334"
 stringModelo:	.asciiz
 
 .text
-li	$a0,2
-li	$a1,'R'
+la	$a0,numeroTeste
+la	$a1,stringTeste
 jal	gerarStringModelo
 move	$a0,$v0
 li	$v0,4
@@ -14,65 +14,45 @@ li	$v0,10
 syscall
 
 
-gerarStringModelo:		#gera a string no formato (X,'Y')
-move	$t0,$a0		#inteiro X	
-move 	$t1,$a1		#caracter Y
+gerarStringModelo:	#gera a string no formato (X,Y)
+move	$t0,$a0		#endereco do primeiro item da string de numero X	
+move 	$t1,$a1		#endereco do primeiro item da string Y
 la	$t3,stringModelo
-li	$t4,'('		#valor ascii para (
+li	$t4,'('		
 sb	$t4,($t3)
-addi	$sp,$sp,-4
+addi	$sp,$sp,-4	#abre espaco na pilha pra guardar o valor de $ra
 sw	$ra,($sp)
-jal	intToString
-sb	$v0,1($t3)
-lw	$ra,($sp)
-addi	$sp,$sp,4
+addi	$t3,$t3,1
+move	$a1,$t3		#passa como parametro o valor do endereco aonde armazenar	
+move	$a0,$t1		#passa como parametro o que armazenar - no caso, endereco do primeiro item da string de numero X
+jal	saveString
 li	$t4,','
-sb	$t4,2($t3)
-li	$t4,'"'
-sb	$t4,3($t3)
-sb	$t1,4($t3)
-li	$t4,'"'
-sb	$t4,5($t3)
+move	$a0,$t1
+jal	saveString
+sb	$t4,1($t3)
+sb	$t1,2($t3)
 li	$t4,')'
-sb	$t4,6($t3)
+sb	$t4,3($t3)
 move	$v0,$t3
 jr	$ra
 
 
+saveString:		#salva string na memoria $a0 o que armazenar e $a1 recebe aonde armazenar  
+move	$t0,$zero
+#li	$t7,'\0'
+move	$t6,$a0		#$t6 tem o endereco do que salvar
+move	$t5,$a1		#$t5 tem o endereco de onde armazenar
+for1:	lb	$t2,($t6)
+	beq	$zero,$t2,endFor1	#se o valor de t2 == \0 sai do loop
+		add	$t5,$t0,$t5
+		add	$t6,$t0,$t6
+		sb	$t5,($t6)
+		addi	$t0,$t0,1
+		j	for1
+endFor1:
+	jr	$ra	
 
-intToString:
-move	$t5,$a0		#inteiro a transformar em ascii
-beq	$t5,0,zero		#valor de 0 na ascii
-beq	$t5,1,um
-beq	$t5,2,dois
-beq	$t5,3,tres
-beq	$t5,4,quatro
-beq	$t5,5,cinco
-beq	$t5,6,seis
-beq	$t5,7,sete
-beq	$t5,8,oito
-beq	$t5,9,nove
-zero:	li	$v0,48
-	jr 	$ra
-um:	li	$v0,49
-	jr	$ra
-dois:	li	$v0,50
-	jr	$ra
-tres:	li	$v0,51
-	jr	$ra
-quatro:	li	$v0,52
-	jr	$ra
-cinco:	li	$v0,53
-	jr	$ra
-seis:	li	$v0,54
-	jr	$ra
-sete:	li	$v0,55
-	jr	$ra
-oito:	li	$v0,56
-	jr	$ra
-nove:	li	$v0,57
-	jr	$ra
-		
+
 
 
 
