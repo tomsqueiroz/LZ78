@@ -1,0 +1,21 @@
+.data
+file:	.asciiz "teste.txt"	#nome arquivo
+buffer:	.asciiz
+
+.text
+li	$v0,13
+la	$a0,file
+li	$a1,0
+li	$a2,0
+syscall
+move 	$t0,$v0
+li	$v0,14
+move	$a0,$t0
+la	$a1,buffer
+li	$a2,8
+syscall
+li	$v0,4
+la	$a0,buffer
+syscall
+
+
