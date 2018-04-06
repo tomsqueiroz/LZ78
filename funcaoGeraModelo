@@ -1,6 +1,6 @@
 .data
 stringTeste:	.asciiz	"Ronaldo"
-numeroTeste:	.ascii	"2334"
+numeroTeste:	.asciiz	"23345555666445654"
 stringModelo:	.asciiz
 
 .text
@@ -24,29 +24,31 @@ addi	$sp,$sp,-4	#abre espaco na pilha pra guardar o valor de $ra
 sw	$ra,($sp)
 addi	$t3,$t3,1
 move	$a1,$t3		#passa como parametro o valor do endereco aonde armazenar	
-move	$a0,$t1		#passa como parametro o que armazenar - no caso, endereco do primeiro item da string de numero X
+move	$a0,$t0		#passa como parametro o que armazenar - no caso, endereco do primeiro item da string de numero X
 jal	saveString
 li	$t4,','
+sb	$t4,($t3)
+addi	$t3,$t3,1
 move	$a0,$t1
+move	$a1,$t3
 jal	saveString
-sb	$t4,1($t3)
-sb	$t1,2($t3)
 li	$t4,')'
-sb	$t4,3($t3)
-move	$v0,$t3
+sb	$t4,($t3)
+lw	$ra,($sp)
+addi	$sp,$sp,4
+la	$v0,stringModelo
 jr	$ra
 
 
-saveString:		#salva string na memoria $a0 o que armazenar e $a1 recebe aonde armazenar  
+saveString:		#$a0 o que armazenar e $a1 recebe aonde armazenar  
 move	$t0,$zero
-#li	$t7,'\0'
 move	$t6,$a0		#$t6 tem o endereco do que salvar
-move	$t5,$a1		#$t5 tem o endereco de onde armazenar
-for1:	lb	$t2,($t6)
+move	$t3,$a1		#$t5 tem o endereco de onde armazenar
+for1:	lb	$t2, ($t6)
 	beq	$zero,$t2,endFor1	#se o valor de t2 == \0 sai do loop
-		add	$t5,$t0,$t5
-		add	$t6,$t0,$t6
-		sb	$t5,($t6)
+		sb	$t2,($t3)
+		addi	$t3,$t3,1
+		addi	$t6,$t6,1
 		addi	$t0,$t0,1
 		j	for1
 endFor1:
