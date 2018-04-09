@@ -1,1 +1,1 @@
-A dictionary is formed by many words. Its really important to keep records of everything, since you will have to unzip it later.
+(0,A)(1,ABA)

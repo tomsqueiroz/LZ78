@@ -1,18 +1,30 @@
 .data
-fileName:	.asciiz	"file.txt"
-mensagemErroFile:	.asciiz	"Erro ao abrir arquivo"
-bufferReadFile:	.asciiz
+fileName:		.asciiz	"file.txt"
+mensagemErroFile:	.asciiz	"Erro ao abrir o arquivo"                  
+bufferReadFile:		.asciiz " "
+modeloLido:		.asciiz " "
 
+#	NAO CONSIGO ATUALIZAR DE ONDE O READ FILE COMECA, PORTANTO, SEMPRE VOU LER O MESMO BYTE 
 
 .text
-#obs: no retorno de funcaoReadFile, $a0 ja tera outro valor
+la	$t2,modeloLido
+loopLeitura:	#le ate finalizar um item do dicionario
 la	$a0,fileName
+addi	$sp,$sp,-4
+sw	$t2,($sp)
 jal	funcaoReadFile
-#				FINS DE TESTE !!!!!
-move	$a0,$v0
+lw	$t2,($sp)
+addi	$sp,$sp,4
+la	$t0,bufferReadFile
+lb	$t1,($t0)
+sb	$t1,($t2)		#salva o byte lido na string ModeloLido
+addi	$t2,$t2,1
+beq	$t1,')',fimLeitura
+j	loopLeitura
+fimLeitura:
 li	$v0,4
+la	$a0,modeloLido
 syscall
-#				!!!!
 #fim do programa
 li	$v0,10
 syscall
@@ -26,7 +38,7 @@ li	$v0,13
 li	$a1,0	#flag 0 == ler, flag 1 == escrever 
 li	$a2,0	#mode is ignored
 syscall
-move	$t0,$v0	#receives file descriptor
+move	$t0,$v0		#receives file descriptor
 slt	$t1,$t0,$zero	#testa condicao de erro, se $v0 retornar negativo, deu erro no processo, chama funcao para notificar usuario
 addi	$sp,$sp,-4
 sw	$ra,($sp)
@@ -48,8 +60,12 @@ jal	printMensagemErroFile
 #a funcao retorna o endereco pra string lida do arquivo, no caso sera de apenas um caracter
 lw	$ra,($sp)
 addi	$sp,$sp,4
+li	$v0,16		#fecha o arquivo
+move	$a0,$t0		#a0 recebe file descriptor
+syscall
 la	$v0,bufferReadFile
 jr	$ra
+
 
 
 printMensagemErroFile:
@@ -61,4 +77,3 @@ printErro:
 	syscall
 	li	$v0,10
 	syscall
-	

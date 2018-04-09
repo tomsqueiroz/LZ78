@@ -1,18 +1,18 @@
 .data
 fileIN:		.asciiz	"(123,AAVAV)"
-fileNumero:	.asciiz	"                                         "
+fileNumero:	.asciiz	                                        
 fileString:	.asciiz	
 
 .text
 
-la	$t0, fileIN 	# endere�o do come�o do arquivo passado para $a0	
+la	$t0, fileIN 	# endereo do comeco do arquivo passado para $a0	
 la 	$t1, fileNumero
 la	$t2, fileString
 addi	$sp,$sp,-12
 sw	$t0, 8($sp)
 sw	$t1, 4($sp)
 sw	$t2, ($sp)
-jal 	parse			
+jal 	parseLoad			
 
 
 parseLoad: 	# tira a vircgula e os parenteses do sting
