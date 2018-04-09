@@ -15,7 +15,7 @@ sw	$t2, ($sp)
 jal 	parseLoad			
 
 
-parseLoad: 	# tira a vircgula e os parenteses do sting
+parseLoad: 	# tira a virgula e os parenteses do sting
 	lw	$t2,($sp)	#endereco para vetorString	
 	lw	$t1,4($sp)	#endereco para vetorNumero
 	lw	$t0,8($sp)	#endereco do vetor de entrada
