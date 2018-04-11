@@ -8,7 +8,6 @@ modeloLido:		.asciiz " "
 
 
 .text
-la	$s6,modeloLido
 li	$v0,13
 la	$a0,fileName
 li	$a1,0	#flag 0 == ler, flag 1 == escrever 
@@ -17,36 +16,10 @@ syscall
 addi	$sp,$sp,-4
 sw	$v0,($sp)
 jal	printMensagemErroFile
-lw	$s7,($sp)	#$s7 contem o file descriptor
+lw	$a0,($sp)	#contem o file descriptor
 addi	$sp,$sp,4
-loopLeitura:	#le ate finalizar um item do dicionario
-addi	$sp,$sp,-4
-sw	$s6,($sp)
-move	$a0,$s7
-jal	funcaoReadFile
-lw	$s6,($sp)
-addi	$sp,$sp,4
-la	$t0,bufferReadFile
-lb	$t1,($t0)
-sb	$t1,($s6)		#salva o byte lido na string ModeloLido
-addi	$s6,$s6,1
-beq	$t1,')',fimLeitura
-j	loopLeitura
-
-fimLeitura:
-li	$v0,16
-move	$a0,$s7
-syscall
-# prepara para chamar a funcao que tira os parenteses e a virgula
-la	$t0,modeloLido
-la	$t1,StringNumero
-la	$t2,StringValor
-addi	$sp,$sp,-12
-sw	$t0,8($sp)	#endereco do vetor de entrada
-sw	$t1,4($sp)	#endereco para vetorNumero
-sw	$t2,($sp)	#endereco para vetorString	
-jal	parseLoad
-addi	$sp,$sp,12
+li	$a1,0
+jal	parsePosition
 #escreve na tela o valor da string de numero e string de valor
 li	$v0,4
 la	$a0,StringNumero
@@ -58,12 +31,66 @@ li	$v0,10
 syscall
 
 
+
+
+
+
+parsePosition:	# void parsePosition ( $a0 fileDescriptor, $a1 int position)
+		
+	li	$t4,0
+	move	$t5,$a1
+	resetModelo:
+	la	$s6,modeloLido
+	loopLeitura:
+	addi	$sp,$sp,-16
+	sw	$a0,12($sp)
+	sw	$t5,8($sp)
+	sw	$t4,4($sp)
+	sw	$s6,($sp)
+	jal	funcaoReadFile
+	#lw	$s6,($sp)
+	lw	$t4,4($sp)
+	lw	$t5,8($sp)
+	lw	$a0,12($sp)
+	addi	$sp,$sp,16
+	la	$t0,bufferReadFile
+	lb	$t1,($t0)
+	sb	$t1,($s6)		#salva o byte lido na string ModeloLido
+	addi	$s6,$s6,1
+	beq	$t1,')',fimLeitura
+	#beq	$t1,3,fimArquivo	
+	j	loopLeitura
+fimArquivo:
+	li $v0,10
+	syscall
+
+fimLeitura:
+beq	$t4,$t5,preparaParseLoad
+addi	$t4,$t4,1
+j	loopLeitura
+# prepara para chamar a funcao que tira os parenteses e a virgula
+preparaParseLoad:
+la	$t0,modeloLido
+la	$t1,StringNumero
+la	$t2,StringValor
+addi	$sp,$sp,-16
+sw	$ra,12($sp)
+sw	$t0,8($sp)	#endereco do vetor de entrada
+sw	$t1,4($sp)	#endereco para vetorNumero
+sw	$t2,($sp)	#endereco para vetorString	
+jal	parseLoad
+lw	$ra,($sp)
+addi	$sp,$sp,4
+jr	$ra
+
+
 funcaoReadFile:	#recebe file descriptor em $a0
 li	$v0,14
 la	$a1,bufferReadFile
 li	$a2,1	#numero maximo de caracteres a serem lidos
 syscall
 move	$a0,$v0
+beq	$a0,0,fimArquivo
 addi	$sp,$sp,-4
 sw	$ra,($sp)
 jal	printMensagemErroFile
@@ -71,6 +98,7 @@ jal	printMensagemErroFile
 #a funcao retorna o endereco pra string lida do arquivo, no caso sera de apenas um caracter
 lw	$ra,($sp)
 addi	$sp,$sp,4
+voltaFuncaoCaller:
 la	$v0,bufferReadFile
 jr	$ra
 
@@ -112,4 +140,7 @@ endDescaca:
 	li	$t3,'\0'
 	sb	$t3,0($t1)
 	jr	$ra
+
+limpaString:
+	
 
