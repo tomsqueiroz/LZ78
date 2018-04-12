@@ -9,6 +9,8 @@ stringValor:		.space	64
 stringChave:		.space	64
 stringChaveEscrever:	.space	64
 stringValorEscrever:	.space	64
+stringValorAux:		.space	64
+stringChaveAux:		.space	64
 stringPadraoZero:	.space	2
 .text
 
@@ -27,7 +29,10 @@ slt	$t2,$v0,$zero
 
 iniciaLeituraCompactar:
 move	$s7,$v0	#filedescriptor
+continuaLoopLeituraCompactar2:
 la	$s6,stringValorEscrever
+li	$s5,0	#contador para ver se ja passou em EXISTE
+li	$t4,-1
 loopLeituraCompactar:
 	move	$a0,$s7
 	li	$v0,14
@@ -41,11 +46,13 @@ loopLeituraCompactar:
 	la	$a0,stringErroArquivo
 	syscall
 	li	$v0,10
-	syscall	
+	syscall
+
 	continualoopLeituraCompactar:
 		lb	$t5,($a1)
 		sb	$t5,($s6)
-		addi	$sp,$sp,-8
+		addi	$sp,$sp,-12
+		sw	$t4,8($sp)
 		sw	$s7,4($sp)
 		sw	$s6,($sp)
 		la	$a0,stringValorEscrever
@@ -53,41 +60,120 @@ loopLeituraCompactar:
 		move	$t4,$v0	#recebe o index no arquivo compactado, se for -1 nao existe
 		lw	$s6,($sp)		
 		lw	$s7,4($sp)
-		addi	$sp,$sp,8
+		lw	$t4,8($sp)
+		addi	$sp,$sp,12
 		bne	$t4,-1,existeByteCompactado	
 		#entra aqui se ainda nao existir
+		bgtz	$s5,jaPassouExiste		#conta para saber se ja passou em existeByte
 		addi	$s6,$s6,1
-		li	$t3,'\0'
+		li	$t3,0
 		sb	$t3,($s6)
 		la	$t7,stringPadraoZero
 		li	$t3,'0'
 		sb	$t3,($t7)
 		addi	$t7,$t7,1
-		li	$t3,'\0'
+		li	$t3,0
 		sb	$t3,($t7)
 		la	$a1,stringValorEscrever
 		la	$a0,stringPadraoZero
-		addi	$sp,$sp,-8
+		addi	$sp,$sp,-12
+		sw	$t4,8($sp)
 		sw	$s7,4($sp)
 		sw	$s6,($sp)
 		jal	addArquivo
 		lw	$s6,($sp)		
 		lw	$s7,4($sp)
-		addi	$sp,$sp,8
-		la	$s6,stringValorEscrever
-		j	loopLeituraCompactar
+		lw	$t4,8($sp)
+		addi	$sp,$sp,12
+		j	continuaLoopLeituraCompactar2
 		existeByteCompactado:
+		#entra aqui se já existir
+		addi	$s6,$s6,1
+		addi	$s5,$s5,1
+		j	loopLeituraCompactar
+		jaPassouExiste:
+			beq	$t4,-1,PulaLinha
+			move	$s4,$t4	#valor do index da posicao anterior
+			PulaLinha:	
+			la	$s6,stringValorEscrever
+			la	$s0,stringValorAux
+			la	$s1,stringChaveAux
+			loopJaPassouExiste:
+			lb	$t0,($s6)
+			addi	$s6,$s6,1
+			beq	$t0,$zero,fimJaPassouExiste
+			j	loopJaPassouExiste
+			fimJaPassouExiste:
+				addi	$s6,$s6,-2
+				lb	$t0,($s6)
+				sb	$t0,($s0)
+				addi	$sp,$sp,-16
+				sw	$s4,12($sp)
+				sw	$s5,8($sp)
+				sw	$s7,4($sp)
+				sw	$s6,($sp)
+				move	$a0,$s4
+				jal	intToString
+				lw	$s6,($sp)
+				lw	$s7,4($sp)
+				lw	$s5,8($sp)
+				lw	$s4,12($sp)
+				addi	$sp,$sp,12
+				la	$a1,stringValorAux
+				la	$a0,stringChaveAux
+				sw	$s5,8($sp)
+				sw	$s7,4($sp)
+				sw	$s6,($sp)
+				move	$a0,$s4
+				jal	addArquivo
+				lw	$s5,8($sp)
+				lw	$s7,4($sp)
+				lw	$s6,($sp)
+				addi	$sp,$sp,12
+				j	continuaLoopLeituraCompactar2
+				
 
 fimCompacta:
 	li	$v0,10
 	syscall
+	
+	
+intToString:	#a0 recebe o valor int 
+la	$t1,stringChaveAux
+move	$t0,$a0
+li	$t3,0
+li	$t4,0
+loopIntToString:
+div 	$t2, $t0, 10
+mfhi 	$t2 #resto
+addi	$t2,$t2,48
+addi	$sp,$sp,-1
+sb 	$t2,($sp)
+div 	$t0, $t0, 10
+addi	$t3,$t3,1
+beqz	$t0,fimLoopIntToString		
+j	loopIntToString
+fimLoopIntToString:
+lb	$t2,($sp)
+addi	$sp,$sp,1
+sb	$t2,($t1)
+addi	$t1,$t1,1
+addi	$t4,$t4,1
+beq	$t3,$t4,fimFim
+j	fimLoopIntToString
+fimFim:
+li	$t2,0
+addi	$t1,$t1,1
+sb	$t2,($t1)
+jr	$ra
+
 
 addArquivo:	#recebe $a0 chave , $a1 valor
 	move	$t0,$a0
 	move	$t1,$a1
 	li	$v0,13
 	la	$a0,fileCompactadoName
-	li	$a1, 1          
+	li	$a1, 9          
 	li 	$a2, 0
 	syscall
 	slt	$t2,$v0,$zero
@@ -181,7 +267,7 @@ retornaIndex:	#recebe $a0 string a pesquisar no arquivo compactado
 				lb	$t0,($s6)
 				addi	$s6,$s6,1
 				beq	$t0,'(',pula
-				beq	$t0,'\0',pula	
+				beq	$t0,$zero,pula	
 				sb	$t0,($s2)
 				addi	$s2,$s2,1
 			pula:
@@ -192,7 +278,7 @@ retornaIndex:	#recebe $a0 string a pesquisar no arquivo compactado
 				addi	$s6,$s6,1
 				sb	$t0,($s4)
 				addi	$s4,$s4,1
-				beq	$t0,'\0',fimString	#trocar esse valor por \0
+				beq	$t0,$zero,fimString	
 				j	inicioString
 			fimString:
 				la	$a0,stringChave
