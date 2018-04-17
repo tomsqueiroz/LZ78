@@ -1,0 +1,138 @@
+.data
+FileName:	.asciiz	"file.txt"
+BufferIn:	.space	1
+StringAux:	.asciiz	"Tom"
+StringAux1:	.asciiz	"Tom1"
+StringAux2:	.asciiz	"Tom2"
+StringAux3:	.asciiz	"Tom3"
+X:		.space	10
+
+Dicionario:	.ascii	"\0"	
+
+.text
+
+la	$t0,StringAux
+move	$a0,$t0
+jal	adiciona
+
+la	$t1,StringAux1
+move	$a0,$t1
+jal	adiciona
+
+la	$t2,StringAux2
+move	$a0,$t2
+jal	adiciona
+
+la	$t0,StringAux
+move	$a0,$t0
+jal	adiciona
+
+la	$t0,StringAux
+move	$a0,$t0
+jal	adiciona
+
+li	$v0,10
+syscall
+
+
+
+adiciona:	# recebe string em $a0
+	move	$t0,$a0
+	li	$t1,0
+	Loop1:
+		move	$a0,$t1
+		addi	$sp,$sp,-12
+		sw	$ra,8($sp)
+		sw	$t0,4($sp)
+		sw	$t1,($sp)
+		jal	get
+		lw	$t1,($sp)
+		lw	$t0,4($sp)
+		lw	$ra,8($sp)
+		addi	$sp,$sp,12	
+		addi	$sp,$sp,-16
+		move	$t2,$v0
+		sw	$ra,12($sp)
+		sw	$t2,8($sp)
+		sw	$t0,4($sp)
+		sw	$t1,($sp)
+		move	$a0,$t2
+		move	$a1,$t0
+		jal	comparaString
+		lw	$t1,($sp)
+		lw	$t0,4($sp)
+		lw	$t2,8($sp)
+		lw	$ra,12($sp)
+		addi	$sp,$sp,16
+		move	$t3,$v0
+		beq	$t3,1,Existe
+		lb	$t2,($t2)
+		beq	$t2,'\0',naoExiste
+		addi	$t1,$t1,1
+		j	Loop1
+		Existe:
+			li	$v0,-1
+			jr	$ra
+		naoExiste:
+			la	$t1,Dicionario
+		Loop2:
+			lb	$t2,($t1)
+			lb	$t3,1($t1)
+			beq	$t2,'\0',fim1
+			addi	$t1,$t1,1
+			j	Loop2
+			fim1:
+				beq	$t3,'\0',fim2
+				addi	$t1,$t1,1
+				j	Loop2
+			fim2:			
+				addi	$t1,$t1,1
+				lb	$t4,($t0)
+				sb	$t4,($t1)
+				addi	$t0,$t0,1
+				beq	$t4,'\0',fim
+				j	fim2
+			fim:
+				li	$v0,1
+				jr	$ra
+		
+		
+	
+
+comparaString:	#coloca em $v0 1 se forem iguais e -1 se forem diferentes
+	lb	$t0,($a0)	#carrega da memoria um byte string1
+	lb	$t1,($a1)	#carrega da memoria um byte string2	
+	bne	$t0,$t1, notEqual
+	beq	$t0,$t1, equal		
+notEqual:	
+	li	$v0,-1
+	jr	$ra
+equal:	
+	beq	$t0,$zero,fimCompara
+	addi	$a0,$a0,1
+	addi	$a1,$a1,1
+	j	comparaString
+fimCompara:
+	li	$v0,1
+	jr	$ra	
+	
+
+get:	# recebe int em $a0
+	
+	move	$t0,$a0
+	la	$t1,Dicionario
+	li	$t2,0
+	addi	$t1,$t1,1
+	Loop:
+		beq	$t2,$t0,chegouString
+		lb	$t3,($t1)
+		beq	$t3,'\0',fimString
+		addi	$t1,$t1,1
+		j	Loop
+		fimString:
+			addi	$t2,$t2,1
+			addi	$t1,$t1,1
+			j	Loop
+		chegouString:
+			move	$v0,$t1
+			jr	$ra
