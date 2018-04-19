@@ -1,24 +1,158 @@
 .data
-FileName:	.asciiz	"x.txt"
-BufferIn:	.space	1
-String:		.asciiz	"C"
-StringAux:	.space	10000
-Dicionario:	.asciiz	"\0"
+FileCompactadoName:	.asciiz	"tomzin.txt"
+FileName:		.asciiz	"x.txt"
+BufferIn:		.space	1
+String:			.asciiz	"C"
+Caracter:		.space	1
+StringFinal:		.space	10000
+StringAux:		.space	10000
+Dicionario:		.asciiz	"\0"
 
 
 .text
 
-jal	populaDicionario
-
-la	$a0,String
-jal	getIndex
-
-move	$a0,$v0
-li	$v0,1
-syscall
+li	$a0,16
+la	$a1,String
+jal	escreveArquivo
 
 li	$v0,10
 syscall
+
+
+compacta:
+	la	$s0,StringAux
+	la	$s1,Caracter
+	li	$t0,0
+	LoopGrandeCompacta:
+		addi	$sp,$sp,-16
+		sw	$s0,12($sp)
+		sw	$s1,8($sp)
+		sw	$t0,4($sp)
+		sw	$ra,($sp)
+		move	$a0,$t0
+		jal	get
+		lw	$ra,($sp)
+		lw	$t0,4($sp)
+		lw	$s1,8($sp)
+		lw	$s0,12($sp)
+		addi	$sp,$sp,16
+		move	$t1,$v0
+		LoopPequenoCompacta:
+			lb	$t2,($t1)
+			lb	$t3,1($t1)
+			beq	$t2,'\0',fimArquivoCompacta
+			beq	$t3,'\0',fimStringCompacta
+			sb	$t2,($s0)
+			addi	$s0,$s0,1
+			addi	$t1,$t1,1
+			j	LoopPequenoCompacta
+			fimStringCompacta:
+				sb	$t2,($s1)
+				li	$t2,'\0'
+				sb	$t2,($s0)
+				la	$s0,StringAux
+				addi	$sp,$sp,-16
+				sw	$s0,12($sp)
+				sw	$s1,8($sp)
+				sw	$t0,4($sp)
+				sw	$ra,($sp)
+				move	$a0,$s0
+				jal	getIndex
+				lw	$ra,($sp)
+				lw	$t0,4($sp)
+				lw	$s1,8($sp)
+				lw	$s0,12($sp)
+				addi	$sp,$sp,16
+				move	$a0,$v0
+				la	$a1,Caracter
+				#escreve(a0,a1)
+				addi	$t0,$t0,1
+				j	LoopGrandeCompacta
+				fimArquivoCompacta:
+					jr	$ra	
+				
+escreveArquivo:	#recebe em $a0 o index INTEIRO do dicionario e em a1 o caracter
+	move	$a0,$a0
+	move	$s1,$a1
+	addi	$sp,$sp,-8
+	sw	$ra,4($sp)
+	sw	$s1,($sp)
+	jal	intToString
+	lw	$s1,($sp)
+	lw	$ra,4($sp)
+	addi	$sp,$sp,8
+	la	$s0,StringAux	#aqui fica o retorno da funcai intToString
+	la	$t0,StringFinal
+	li	$t7,0
+	li	$t1,'('
+	sb	$t1,($t0)
+	add	$t7,$t7,1
+	addi	$t0,$t0,1
+	LoopEscreveNumero:
+		lb	$t1,($s0)
+		beq	$t1,'\0',fimNumeroEscreve
+		sb	$t1,($t0)
+		add	$t7,$t7,1
+		addi	$t0,$t0,1
+		addi	$s0,$s0,1
+		j	LoopEscreveNumero
+	fimNumeroEscreve:
+		li	$t1,','
+		sb	$t1,($t0)
+		add	$t7,$t7,1
+		addi	$t0,$t0,1
+		addi	$s0,$s0,1
+		lb	$t1,($s1)
+		sb	$t1,($t0)
+		add	$t7,$t7,1
+		addi	$t0,$t0,1
+		li	$t1,')'
+		sb	$t1,($t0)
+		add	$t7,$t7,1
+	escreveArquivoFinal:
+		li	$v0,13
+		la	$a0,FileCompactadoName
+		li	$a1, 9          
+		li 	$a2, 0
+		syscall
+		move	$a0,$v0
+		la	$a1,StringFinal
+		move	$a2,$t7
+		li	$v0,15
+		syscall
+		jr	$ra
+	
+		
+##############################################################################################################################
+intToString:	#a0 recebe o valor int 
+la	$t1,StringAux
+move	$t0,$a0
+li	$t3,0
+li	$t4,0
+loopIntToString:
+div 	$t2, $t0, 10
+mfhi 	$t2 #resto
+addi	$t2,$t2,48
+addi	$sp,$sp,-1
+sb 	$t2,($sp)
+div 	$t0, $t0, 10
+addi	$t3,$t3,1
+beqz	$t0,fimLoopIntToString		
+j	loopIntToString
+fimLoopIntToString:
+lb	$t2,($sp)
+addi	$sp,$sp,1
+sb	$t2,($t1)
+addi	$t1,$t1,1
+addi	$t4,$t4,1
+beq	$t3,$t4,fimFim
+j	fimLoopIntToString
+fimFim:
+li	$t2,0
+addi	$t1,$t1,1
+sb	$t2,($t1)
+jr	$ra
+##############################################################################################################################
 
 
 
