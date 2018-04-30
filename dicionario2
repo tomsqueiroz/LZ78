@@ -2,28 +2,30 @@
 FileCompactadoName:	.asciiz	"tomzin.txt"
 FileName:		.asciiz	"x.txt"
 BufferIn:		.space	1
-String:			.asciiz	"C"
-Caracter:		.space	1
-StringFinal:		.space	10000
+Dicionario:		.asciiz	
 StringAux:		.space	10000
-Dicionario:		.asciiz	"\0"
+Caracter:		.space	2
+StringFinal:		.space	10000
+
+
 
 
 .text
 
-li	$a0,16
-la	$a1,String
-jal	escreveArquivo
+jal	populaDicionario
+
+#jal	compacta
 
 li	$v0,10
 syscall
 
 
 compacta:
-	la	$s0,StringAux
-	la	$s1,Caracter
 	li	$t0,0
 	LoopGrandeCompacta:
+		la	$s0,StringAux
+		la	$s1,Caracter
+		li	$s7,0
 		addi	$sp,$sp,-16
 		sw	$s0,12($sp)
 		sw	$s1,8($sp)
@@ -40,6 +42,7 @@ compacta:
 		LoopPequenoCompacta:
 			lb	$t2,($t1)
 			lb	$t3,1($t1)
+			addi	$s7,$s7,1
 			beq	$t2,'\0',fimArquivoCompacta
 			beq	$t3,'\0',fimStringCompacta
 			sb	$t2,($s0)
@@ -47,9 +50,17 @@ compacta:
 			addi	$t1,$t1,1
 			j	LoopPequenoCompacta
 			fimStringCompacta:
+				bgt 	$s7,1, StringMaiorQueUm
 				sb	$t2,($s1)
 				li	$t2,'\0'
-				sb	$t2,($s0)
+				sb	$t2,1($s1)
+				li	$v0,0
+				j	EscreveCompacta
+				StringMaiorQueUm:
+				sb	$t2,($s1)
+				li	$t2,'\0'
+				sb	$t2,1($s0)
+				sb	$t2,1($s1)
 				la	$s0,StringAux
 				addi	$sp,$sp,-16
 				sw	$s0,12($sp)
@@ -63,9 +74,19 @@ compacta:
 				lw	$s1,8($sp)
 				lw	$s0,12($sp)
 				addi	$sp,$sp,16
+				addi	$v0,$v0,1
+				EscreveCompacta:
 				move	$a0,$v0
 				la	$a1,Caracter
-				#escreve(a0,a1)
+				sw	$s0,12($sp)
+				sw	$s1,8($sp)
+				sw	$t0,4($sp)
+				sw	$ra,($sp)
+				jal	escreveArquivo
+				lw	$ra,($sp)
+				lw	$t0,4($sp)
+				lw	$s1,8($sp)
+				lw	$s0,12($sp)
 				addi	$t0,$t0,1
 				j	LoopGrandeCompacta
 				fimArquivoCompacta:
@@ -120,6 +141,10 @@ escreveArquivo:	#recebe em $a0 o index INTEIRO do dicionario e em a1 o caracter
 		move	$a2,$t7
 		li	$v0,15
 		syscall
+		li	$v0,16
+		syscall
+		
+		
 		jr	$ra
 	
 		
